@@ -21,3 +21,7 @@ const renderHTML = async () => {
   htmlOutput.innerHTML = newHtml;
   updateRender();
 }
+
+
+update = document.getElementById("update");
+update.addEventListener("click", renderHTML);
