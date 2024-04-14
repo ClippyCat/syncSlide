@@ -1,3 +1,9 @@
+const WEBSOCKET_ADDR = "ws://localhost:5000";
+const socket = new WebSocket(WEBSOCKET_ADDR);
+const md = new remarkable.Remarkable({
+	html: true,
+});
+
 const updateRender = async () => {
 	const htmlDiv = document.getElementById("currentSlide");
 	renderMathInElement(htmlDiv, {
@@ -9,27 +15,24 @@ const updateRender = async () => {
 	});
 }
 
+const handleUpdate = (message) => {
+	const newHtml = md.render(message.data);
+	const htmlOutput = document.getElementById("currentSlide");
+	htmlOutput.innerHTML = newHtml;
+	updateRender();
+}
+
 const renderHTML = async () => {
-	const md = new remarkable.Remarkable({
-		html: true,
-	});
 	const markdownInput = document.getElementById("markdown-input").value;
 	const title = markdownInput.split('\n')[0];
-	const htmlOutput = document.getElementById("currentSlide");
 	getSlide = markdownInput.split("\n## ");
 	numSlides = getSlide.length;
 	goto = document.getElementById("goTo");
 	goto.max = numSlides-1;
-slideIndex = goto.value;
-
-	const newHtml = md.render(title + "\n" + "## " + getSlide[slideIndex]);
-	htmlOutput.innerHTML = newHtml;
-	updateRender();
-
-const socket = new WebSocket('ws://localhost:8080');
-socket.send(title + "\n" + "## " + getSlide[slideIndex]);
+	slideIndex = goto.value;
+	socket.send(title + "\n" + "## " + getSlide[slideIndex]);
 }
-
 
 update = document.getElementById("update");
 update.addEventListener("click", renderHTML);
+socket.onmessage = handleUpdate
