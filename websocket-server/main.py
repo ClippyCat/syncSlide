@@ -1,25 +1,31 @@
-from flask import Flask, request
-from simple_websocket import Server, ConnectionClosed
+# Adapted from simple_websocket demo: https://simple-websocket.readthedocs.io/en/latest/intro.html#server-example-2-aiohttp
 
-app = Flask(__name__)
+from aiohttp import web
+from simple_websocket import AioServer, ConnectionClosed
+
+app = web.Application()
+
 clients = []
 
-# start using the '/echo' endpoint
-@app.route('/echo', websocket=True)
-def echo():
-    ws = Server.accept(request.environ)
-    # add to list of all clients
+async def broadcast_to_all(request):
+    ws = await AioServer.accept(aiohttp=request)
     clients.append(ws)
-    # .receive() will raise an exception if nothing is there, that's why we have to try
     try:
         while True:
-            data = ws.receive()
-            # send each client the same message
+# wait for this specific client to send a message to the server
+            data = await ws.receive()
+# send each and every client the same message
             for client in clients:
-                client.send(data)
-    # if the connection is closed, just leave the handler (returning '' is valid)
+                await client.send(data)
+# if client disconnected, do nothing
     except ConnectionClosed:
-        return ''
-    # other exceptions also should return nothing
-    return ''
+        pass
+# must return a valid HTTP response, even if it is a blank string
+    return web.Response(text='')
 
+# route broadcast_to_all to root (/) URL.
+app.add_routes([web.get('/', broadcast_to_all)])
+
+# if the file is being run from the command line
+if __name__ == '__main__':
+    web.run_app(app, port=5000)
