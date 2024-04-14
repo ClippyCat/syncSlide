@@ -14,6 +14,7 @@ const renderHTML = async () => {
 		html: true,
 	});
 	const markdownInput = document.getElementById("markdown-input").value;
+	const title = markdownInput.split('\n')[0];
 	const htmlOutput = document.getElementById("currentSlide");
 	getSlide = markdownInput.split("\n## ");
 	numSlides = getSlide.length;
@@ -21,7 +22,7 @@ const renderHTML = async () => {
 	goto.max = numSlides;
 slideIndex = goto.value;
 
-	const newHtml = md.render("## "+getSlide[slideIndex]);
+	const newHtml = md.render(title + "\n" + "## " + getSlide[slideIndex]);
 	htmlOutput.innerHTML = newHtml;
 	updateRender();
 }
