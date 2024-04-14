@@ -16,8 +16,10 @@ const renderHTML = async () => {
   const markdownInput = document.getElementById("markdown-input");
   const mkInputAr = markdownInput.value.replaceAll("ARS", "<span lang=\"ar\" dir=\"rtl\">")
   const mkInputAr2 = mkInputAr.replaceAll("ARE", "</span>");
+  getSlide = mkInputAr2.split("## ", 0);
+
   const htmlOutput = document.getElementById("currentSlide");
-  const newHtml = md.render(mkInputAr2);
+  const newHtml = md.render(getSlide);
   htmlOutput.innerHTML = newHtml;
   updateRender();
 }
