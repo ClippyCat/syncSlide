@@ -25,6 +25,9 @@ slideIndex = goto.value;
 	const newHtml = md.render(title + "\n" + "## " + getSlide[slideIndex]);
 	htmlOutput.innerHTML = newHtml;
 	updateRender();
+
+const socket = new WebSocket('ws://localhost:8080');
+socket.send(title + "\n" + "## " + getSlide[slideIndex]);
 }
 
 
