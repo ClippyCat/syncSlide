@@ -6,6 +6,8 @@
 
 <script defer="defer" src="js/remarkable.js"></script>
 <script defer="defer" src="js/katex.js"></script>
+<script defer="defer" src="js/auto-render.js"></script>
+<script defer="defer" src="js/render-a11y-string.js"></script>
 <script defer="defer" src="js/handlers.js"></script>
 <link rel="stylesheet" href="js/katex.css">
 
@@ -18,8 +20,7 @@
 <textarea id="markdown-input"> </textarea>
 
 <label for="goTo">Go to slide:</label>
-<select id="goTo" name="goTo">
-</select>
+<input type="range" id="goTo" name="goTo" min="1">
 <button id="update">update</button>
 
 <h1 id="title">Title</h1>
