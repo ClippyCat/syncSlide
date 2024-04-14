@@ -19,7 +19,7 @@ const renderHTML = async () => {
 	getSlide = markdownInput.split("\n## ");
 	numSlides = getSlide.length;
 	goto = document.getElementById("goTo");
-	goto.max = numSlides;
+	goto.max = numSlides-1;
 slideIndex = goto.value;
 
 	const newHtml = md.render(title + "\n" + "## " + getSlide[slideIndex]);
