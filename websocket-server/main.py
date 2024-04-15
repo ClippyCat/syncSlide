@@ -19,7 +19,7 @@ async def broadcast_to_all(request):
 				await client.send(data)
 # if client disconnected, do nothing
 	except ConnectionClosed:
-		pass
+		clients = [x for x in clients if x != ws]
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
