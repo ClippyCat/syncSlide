@@ -15,8 +15,8 @@ To get started, open a virtual environment, then run using `python`
 
 - `python -mvenv env`
 - `env\Scripts\Activate.ps1`
-- `pip install -r websocket-server\requirements.txt`
-- `python websocket-server\main.py`
+- `pip install -r requirements.txt`
+- `python main.py`
 
 ## How To Test
 
