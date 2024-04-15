@@ -22,4 +22,4 @@ To get started, open a virtual environment, then run using `python`
 
 Using a websocket CLI client, open two terminal windows, and run them using these URLs:
 
-- `websocat ws://127.0.0.1:5000/`
+- `websocat ws://127.0.0.1:5002/`

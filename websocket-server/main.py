@@ -41,4 +41,4 @@ app.add_routes([web.get('/', broadcast_to_all)])
 
 # if the file is being run from the command line
 if __name__ == '__main__':
-	web.run_app(app, port=5000)
+	web.run_app(app, port=5002)
