@@ -8,24 +8,24 @@ app = web.Application()
 clients = []
 
 async def broadcast_to_all(request):
-    ws = await AioServer.accept(aiohttp=request)
-    clients.append(ws)
-    try:
-        while True:
+	ws = await AioServer.accept(aiohttp=request)
+	clients.append(ws)
+	try:
+		while True:
 # wait for this specific client to send a message to the server
-            data = await ws.receive()
+			data = await ws.receive()
 # send each and every client the same message
-            for client in clients:
-                await client.send(data)
+			for client in clients:
+				await client.send(data)
 # if client disconnected, do nothing
-    except ConnectionClosed:
-        pass
+	except ConnectionClosed:
+		pass
 # must return a valid HTTP response, even if it is a blank string
-    return web.Response(text='')
+	return web.Response(text='')
 
 # route broadcast_to_all to root (/) URL.
 app.add_routes([web.get('/', broadcast_to_all)])
 
 # if the file is being run from the command line
 if __name__ == '__main__':
-    web.run_app(app, port=5000)
+	web.run_app(app, port=5000)

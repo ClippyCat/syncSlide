@@ -20,6 +20,6 @@ To get started, open a virtual environment, then run using `python`
 
 ## How To Test
 
-Using a websocket CLI client, open two teminal windows, and run them using these URLs:
+Using a websocket CLI client, open two terminal windows, and run them using these URLs:
 
 - `websocat ws://127.0.0.1:5000/`
