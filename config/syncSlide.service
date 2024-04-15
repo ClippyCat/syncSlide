@@ -1,0 +1,36 @@
+# to install the file, place completed file in /etc/systemd/system/
+# reload the daemon to load your new service file:
+# `systemctl daemon-reload`
+# you can now start it with:
+# `systemctl start FILE_NAME_WITHOUT_DOT_SERVICE`
+# or enable it at boot with:
+# `systemctl enable FILE_NAME_WITHOUT_DOT_SERVICE`
+# or do both with:
+# `systemctl enable --now FILE_NAME_WITHOUT_DOT_SERVICE`
+
+[Unit]
+# basic description of service; replace with legit description
+Description=SyncSlide
+
+[Service]
+# change lowercase "user" to the user which will be running the program: this is usually the one whoes home directory the project is in
+User=arch
+# change to where the directory of the project is
+WorkingDirectory=/home/arch/syncSlide/websocket-server
+# leave Type= and RemainAfterExit= alone; these specify the type of program that is being run
+Type=simple
+RemainAfterExit=yes
+# replace with FULL PATH of command you want to run,
+# you can find that by running `which MY_COMMAND_HERE`
+ExecStart=/home/arch/syncSlide/websocket-server/env/bin/python main.py
+
+# instructions on how to kill the process
+# this is a graceful exit and should not be modified unless you know which signal
+# can properly shutdown your program
+ExecStop=/bin/kill -HUP $MAINPID
+# if process dies, should you restart it? leave it as always to auto restart
+Restart=always
+
+[Install]
+# WantedBy=multi-user.target allows it to be enabled with systemctl to start on boot
+WantedBy=multi-user.target
