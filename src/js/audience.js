@@ -1,4 +1,4 @@
-const WEBSOCKET_ADDR = "ws://172.81.178.147:5000/";
+const WEBSOCKET_ADDR = "ws://172.81.178.147:5002/";
 const socket = new WebSocket(WEBSOCKET_ADDR);
 const md = new remarkable.Remarkable({
 	html: true,
