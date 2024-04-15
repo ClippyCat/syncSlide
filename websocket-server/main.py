@@ -8,11 +8,17 @@ app = web.Application()
 clients = []
 
 def add_client(ws):
-    clients.append(ws)
-    return len(clients)-1
+	uid = 0
+	if len(clients) != 0:
+		uid = max([x for (x,y) in clients])
+	uid += 1
+	clients.append((uid, ws))
+	return uid
 
-def remove_client(idx):
-    del clients[idx]
+def remove_client(uid):
+	idx = [i for (i,(x,y)) in enumerate(clients) if x == uid]
+	if len(idx) == 1:
+		del clients[idx[0]]
 
 async def broadcast_to_all(request):
 	ws = await AioServer.accept(aiohttp=request)
@@ -22,7 +28,7 @@ async def broadcast_to_all(request):
 # wait for this specific client to send a message to the server
 			data = await ws.receive()
 # send each and every client the same message
-			for client in clients:
+			for (_,client) in clients:
 				await client.send(data)
 # if client disconnected, do nothing
 	except ConnectionClosed:
