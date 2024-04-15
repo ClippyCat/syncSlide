@@ -7,9 +7,16 @@ app = web.Application()
 
 clients = []
 
+def add_client(ws):
+    clients.append(ws)
+    return len(clients)-1
+
+def remove_client(idx):
+    del clients[idx]
+
 async def broadcast_to_all(request):
 	ws = await AioServer.accept(aiohttp=request)
-	clients.append(ws)
+	client_idx = add_client(ws)
 	try:
 		while True:
 # wait for this specific client to send a message to the server
@@ -19,7 +26,7 @@ async def broadcast_to_all(request):
 				await client.send(data)
 # if client disconnected, do nothing
 	except ConnectionClosed:
-		clients = [x for x in clients if x != ws]
+		remove_client(client_idx)
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
