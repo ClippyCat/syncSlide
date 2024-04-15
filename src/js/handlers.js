@@ -1,4 +1,4 @@
-const WEBSOCKET_ADDR = "wss://syncslide.clippycat.ca/ws";
+const WEBSOCKET_ADDR = "wss://syncslide.clippycat.ca/ws/";
 const socket = new WebSocket(WEBSOCKET_ADDR);
 const md = new remarkable.Remarkable({
 	html: true,
