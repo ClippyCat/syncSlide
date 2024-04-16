@@ -1,9 +1,11 @@
 # test slides
-## 1
-1
+## slide1
+Hello world
 
-## 2
-2
+## slide2
+something else
 
-## 3 
-3
+## slide3
+* 1
+* 2
+* 3
