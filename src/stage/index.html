@@ -14,17 +14,16 @@
 </head>
 
 <body>
-<main>
+<header>
 <h1 id="syncSlide">Sync Slide</h1>
-
+</header>
+<main>
 <label for="markdown-input">markdown input</label>
 <textarea id="markdown-input"></textarea>
-
 <label for="goTo">Go to slide:</label>
 <input type="range" id="goTo" name="goTo" min="1" max="1">
 <button id="update">update</button>
 
-<div aria-live="polite "id="currentSlide"></div>
-
+<article aria-live="polite "id="currentSlide"></article>
 </main>
 </body></html>
