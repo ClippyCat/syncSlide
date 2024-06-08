@@ -54,4 +54,4 @@ const renderHTML = async () => {
 
 update = document.getElementById("update");
 update.addEventListener("click", renderHTML);
-socket.onmessage = handleUpdate
+socket.onmessage = handleUpdate;
