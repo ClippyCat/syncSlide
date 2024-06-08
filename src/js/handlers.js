@@ -15,8 +15,33 @@ const updateRender = async () => {
 	});
 }
 
+function stringToDOM(htmlString) {
+	var tempElement = document.createElement('div');
+	tempElement.innerHTML = htmlString.trim();
+return tempElement.firstChild;
+}
+
+function getH2s(allHtml) {
+	const h2s = allHtml.querySelectorAll('h2');
+	const result = [];
+	h2s.forEach(h2 => {
+		const siblings = [];
+		let sibling = h2.nextElementSibling;
+		while (sibling && sibling.tagName !== 'H2') {
+			siblings.push(sibling);
+			sibling = sibling.nextElementSibling;
+		}
+
+		result.push({ h2, siblings });
+	});
+	return result;
+}
+
 const handleUpdate = (message) => {
-	const newHtml = md.render(message.data);
+	const htmlString = md.render(message.data);
+	allHtml = stringToDOM(htmlString);
+	slideIndex = document.getElementById("goTo").value;
+	newHtml = getH2s(allHtml)[slideIndex-1];
 	const htmlOutput = document.getElementById("currentSlide");
 	htmlOutput.innerHTML = newHtml;
 	updateRender();
@@ -24,13 +49,7 @@ const handleUpdate = (message) => {
 
 const renderHTML = async () => {
 	const markdownInput = document.getElementById("markdown-input").value;
-	const title = markdownInput.split('\n')[0];
-	getSlide = markdownInput.split("\n## ");
-	numSlides = getSlide.length;
-	goto = document.getElementById("goTo");
-	goto.max = numSlides-1;
-	slideIndex = goto.value;
-	socket.send(title + "\n" + "## " + getSlide[slideIndex]);
+	socket.send(markdownInput);
 }
 
 update = document.getElementById("update");
