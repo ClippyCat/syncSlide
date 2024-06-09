@@ -23,6 +23,16 @@ return tempElement;
 
 function getH2s(allHtml) {
 	const h2s = allHtml.querySelectorAll('h2');
+	for (const [i, e] of h2s.entries()) {
+		const newOption = document.createElement('option');
+		newOption.value = i;
+		newOption.innerText = (i+1) + ": " + e.innerText;
+		document.getElementById("goTo").appendChild(newOption);
+	}
+}
+
+function addSiblings(allHtml) {
+	const h2s = allHtml.querySelectorAll('h2');
 	const result = [];
 	h2s.forEach(h2 => {
 		const siblings = [h2];
@@ -40,8 +50,9 @@ function getH2s(allHtml) {
 const handleUpdate = (message) => {
 	const htmlString = md.render(message.data);
 	allHtml = stringToDOM(htmlString);
+getH2s(allHtml);
 	slideIndex = document.getElementById("goTo").value;
-	newHtml = getH2s(allHtml)[slideIndex-1];
+	newHtml = addSiblings(allHtml)[slideIndex];
 	const htmlOutput = document.getElementById("currentSlide");
 	htmlOutput.innerHTML = "";
 	for (nh of newHtml) {
@@ -57,4 +68,4 @@ const renderHTML = async () => {
 
 update = document.getElementById("update");
 update.addEventListener("click", renderHTML);
-socket.onmessage = handleUpdate
+socket.onmessage = handleUpdate;
