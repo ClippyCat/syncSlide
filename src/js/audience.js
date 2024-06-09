@@ -1,24 +1,33 @@
-const WEBSOCKET_ADDR = "wss://syncslide.clippycat.ca/ws/";
-const socket = new WebSocket(WEBSOCKET_ADDR);
-const md = new remarkable.Remarkable({
-	html: true,
-});
+let TEXT_TO_RENDER = "";
 
-const updateRender = async () => {
-	const htmlDiv = document.getElementById("currentSlide");
-	renderMathInElement(htmlDiv, {
-		delimiters: [
-			{left: "$$", right: "$$", display: true},
-			{left: "$", right: "$", display: false}
-		],
-		throwError: false,
-	});
+function is_stage() {
+	window.location.href.endsWith("stage/")
+}
+
+function stringToDOM(htmlString) {
+	var tempElement = document.createElement('div');
+	tempElement.innerHTML = htmlString.trim();
+return tempElement;
 }
 
 const handleUpdate = (message) => {
-	const newHtml = md.render(message.data);
+	message = JSON.parse(message.data);
+	if (message.type === "text") {
+		TEXT_TO_RENDER = message.text;
+		return;
+	}
+	const slideIndex = message.slide;
+	const htmlString = md.render(TEXT_TO_RENDER);
+	allHtml = stringToDOM(htmlString);
+	if (is_stage()) {
+		getH2s(allHtml)
+	}
+	newHtml = addSiblings(allHtml)[slideIndex];
 	const htmlOutput = document.getElementById("currentSlide");
-	htmlOutput.innerHTML = newHtml;
+	htmlOutput.innerHTML = "";
+	for (nh of newHtml) {
+		htmlOutput.appendChild(nh);
+	}
 	updateRender();
 }
 
