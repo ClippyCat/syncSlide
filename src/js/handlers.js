@@ -18,21 +18,21 @@ const updateRender = async () => {
 function stringToDOM(htmlString) {
 	var tempElement = document.createElement('div');
 	tempElement.innerHTML = htmlString.trim();
-return tempElement.firstChild;
+return tempElement;
 }
 
 function getH2s(allHtml) {
 	const h2s = allHtml.querySelectorAll('h2');
 	const result = [];
 	h2s.forEach(h2 => {
-		const siblings = [];
+		const siblings = [h2];
 		let sibling = h2.nextElementSibling;
 		while (sibling && sibling.tagName !== 'H2') {
 			siblings.push(sibling);
 			sibling = sibling.nextElementSibling;
 		}
 
-		result.push({ h2, siblings });
+		result.push(siblings);
 	});
 	return result;
 }
@@ -43,7 +43,10 @@ const handleUpdate = (message) => {
 	slideIndex = document.getElementById("goTo").value;
 	newHtml = getH2s(allHtml)[slideIndex-1];
 	const htmlOutput = document.getElementById("currentSlide");
-	htmlOutput.innerHTML = newHtml;
+	htmlOutput.innerHTML = "";
+	for (nh of newHtml) {
+		htmlOutput.appendChild(nh);
+	}
 	updateRender();
 }
 
