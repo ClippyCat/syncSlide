@@ -24,7 +24,7 @@ const handleUpdate = (message) => {
 	}
 	newHtml = addSiblings(allHtml)[slideIndex];
 	const htmlOutput = document.getElementById("currentSlide");
-	htmlOutput.innerHTML = "";
+	htmlOutput.innerHTML = allHtml.querySelector('h1');
 	for (nh of newHtml) {
 		htmlOutput.appendChild(nh);
 	}
