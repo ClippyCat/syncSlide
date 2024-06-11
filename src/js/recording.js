@@ -71,7 +71,8 @@ function saveCurrentState() {
     if (recording && !paused) {
         const currentTime = Date.now() - startTime;
         const slide = document.getElementById("goTo").value;
-        recordingData.push({ time: currentTime, slide: slide });
+        const slideContent = document.getElementById("currentSlide").innerHTML;
+        recordingData.push({ time: currentTime, slide: slide, content: slideContent });
     }
 }
 
