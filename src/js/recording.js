@@ -19,7 +19,6 @@ recordPauseButton.addEventListener("click", () => {
 });
 
 stopButton.addEventListener("click", stopRecording);
-updateButton.addEventListener("click", saveCurrentState);
 
 function startRecording() {
     recording = true;
@@ -75,6 +74,7 @@ function saveCurrentState() {
         recordingData.push({ time: currentTime, slide: slide, content: slideContent });
     }
 }
+window.saveCurrentState = saveCurrentState
 
 function downloadRecording() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recordingData));

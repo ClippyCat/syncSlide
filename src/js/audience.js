@@ -30,6 +30,7 @@ const handleUpdate = (message) => {
 		htmlOutput.appendChild(nh);
 	}
 	updateRender();
+saveCurrentState();
 }
 
 socket.onmessage = handleUpdate
