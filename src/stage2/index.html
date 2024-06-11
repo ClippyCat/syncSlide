@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8" />
+<title>Stage -- SyncSlide</title>
+<script defer="defer" src="/js/remarkable.js"></script>
+<script defer="defer" src="/js/katex.js"></script>
+<script defer="defer" src="/js/auto-render.js"></script>
+<script defer="defer" src="/js/render-a11y-string.js"></script>
+<script defer="defer" src="/js/common.js"></script>
+<script defer="defer" src="/js/handlers.js"></script>
+<script defer="defer" src="/js/audience.js"></script>
+<script defer="defer" src="/js/recording.js"></script>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/katex.css">
+</head>
+
+<body>
+<header>
+<h1 id="syncSlide">Sync Slide</h1>
+</header>
+
+<h2>Record</h2>
+<button id="recordPause">Record</button>
+<button id="stop">Stop</button>
+<div id="timer">00:00:00</div>
+
+<main>
+<label for="markdown-input">markdown input</label>
+<textarea id="markdown-input"></textarea>
+<label for="goTo">Go to slide:</label>
+<select id="goTo" name="goTo"></select>
+<button id="update">update</button>
+
+<article aria-live="polite "id="currentSlide"></article>
+</main>
+</body></html>
