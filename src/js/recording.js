@@ -77,7 +77,7 @@ function saveCurrentState() {
 window.saveCurrentState = saveCurrentState
 
 function downloadRecording() {
-	const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recordingData));
+	const dataStr = "data:text/json;charset=utf-8," + "slidesData=" + encodeURIComponent(JSON.stringify(recordingData));
 	const downloadAnchorNode = document.createElement('a');
 	downloadAnchorNode.setAttribute("href", dataStr);
 	downloadAnchorNode.setAttribute("download", "recording.json");
