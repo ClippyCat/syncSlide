@@ -6,8 +6,8 @@ from simple_websocket import AioServer, ConnectionClosed
 
 app = web.Application()
 
-SLIDE_CONTENTS = ""
-SLIDE_IDX = -1
+SLIDE_CONTENTS = None
+SLIDE_IDX = None
 
 clients = []
 
@@ -33,12 +33,14 @@ def update_active_slide_data(raw_msg):
 	json_msg = json.loads(raw_msg)
 	if json_msg["type"] == "text":
 		SLIDE_CONTENTS = json_msg["text"]
-		print("Content updated: ", SLIDE_CONTENTS)
 	elif json_msg["type"] == "slide":
 		SLIDE_IDX = json_msg["slide"]
-		print("IDX updated: ", SLIDE_IDX)
 
 async def send_active_slide_data(ws):
+	global SLIDE_CONTENTS
+	global SLIDE_IDX
+	if not SLIDE_CONTENTS or not SLIDE_IDX:
+		return
 	await ws.send(json.dumps({"type": "text", "text": SLIDE_CONTENTS}))
 	await ws.send(json.dumps({"type": "slide", "slide": SLIDE_IDX}))
 
@@ -56,7 +58,6 @@ async def broadcast_to_all(request):
 				await client.send(data)
 # if client disconnected, do nothing
 	except ConnectionClosed:
-		print("Closing", client_idx)
 		remove_client(client_idx)
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
