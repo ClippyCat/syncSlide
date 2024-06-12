@@ -71,7 +71,7 @@ function saveCurrentState() {
 		const currentTime = Date.now() - startTime;
 		const slide = document.getElementById("goTo").value;
 		const slideContent = document.getElementById("currentSlide").innerHTML;
-		recordingData.push({ time: parseFloat(currentTime/1000.toFixed(1)), slide: slide, content: slideContent });
+		recordingData.push({ time: parseFloat((currentTime /1000).toFixed(1)), slide: slide, content: slideContent });
 	}
 }
 window.saveCurrentState = saveCurrentState
