@@ -1,9 +1,13 @@
 # Adapted from simple_websocket demo: https://simple-websocket.readthedocs.io/en/latest/intro.html#server-example-2-aiohttp
 
+import json
 from aiohttp import web
 from simple_websocket import AioServer, ConnectionClosed
 
 app = web.Application()
+
+SLIDE_CONTENTS = ""
+SLIDE_IDX = -1
 
 clients = []
 
@@ -20,16 +24,33 @@ def remove_client(uid):
 	if len(idx) == 1:
 		del clients[idx[0]]
 
+# no need for async since we are not waiting on sending/receiving data
+def update_active_slide_data(raw_msg):
+	# use global vars instead of creating new, local vars
+	global SLIDE_CONTENTS
+	global SLIDE_IDX
+	# BTW json is a module, this vairbale can not also be called json
+	json_msg = json.loads(raw_msg)
+	if json_msg["type"] == "text":
+		SLIDE_CONTENTS = json_msg["text"]
+		print("Content updated: ", SLIDE_CONTENTS)
+	elif json_msg["type"] == "slide":
+		SLIDE_IDX = json_msg["slide"]
+		print("IDX updated: ", SLIDE_IDX)
+
+async def send_active_slide_data(ws):
+	await ws.send(json.dumps({"type": "text", "text": SLIDE_CONTENTS}))
+	await ws.send(json.dumps({"type": "slide", "slide": SLIDE_IDX}))
+
 async def broadcast_to_all(request):
-	print(request)
 	ws = await AioServer.accept(aiohttp=request)
-	print(ws)
 	client_idx = add_client(ws)
-	print(client_idx)
+	await send_active_slide_data(ws)
 	try:
 		while True:
 # wait for this specific client to send a message to the server
 			data = await ws.receive()
+			update_active_slide_data(data)
 # send each and every client the same message
 			for (_,client) in clients:
 				await client.send(data)
