@@ -62,7 +62,6 @@ function formatTime(ms) {
 	const hours = Math.floor(totalSeconds / 3600);
 	const minutes = Math.floor((totalSeconds % 3600) / 60);
 	const seconds = totalSeconds % 60;
-
 	return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
@@ -71,7 +70,8 @@ function saveCurrentState() {
 		const currentTime = Date.now() - startTime;
 		const slide = document.getElementById("goTo").value;
 		const slideContent = document.getElementById("currentSlide").innerHTML;
-		recordingData.push({ time: parseFloat((currentTime /1000).toFixed(1)), slide: slide, content: slideContent });
+		const slideTitle = slideContent.querySelector('h2').innerText);
+		recordingData.push({ time: parseFloat((currentTime /1000).toFixed(1)), slide: slide, title: slideTitle, content: slideContent });
 	}
 }
 window.saveCurrentState = saveCurrentState
