@@ -19,19 +19,20 @@
 <header>
 <h1 id="syncSlide">Sync Slide</h1>
 </header>
-
-<h2>Record</h2>
+<main>
+<section aria-labelledby="record">
+<h2 id = "record">Record</h2>
 <button id="recordPause">Record</button>
 <button id="stop">Stop</button>
 <p id="timer">00:00:00</p>
-
-<main>
-<label for="markdown-input">markdown input</label>
+</section>
+<section aria-labelledby="input">
+<h2 id="input">Input</h2>
 <textarea id="markdown-input"></textarea>
 <label for="goTo">Go to slide:</label>
 <select id="goTo" name="goTo"></select>
 <button id="update">update</button>
-
+</section>
 <article aria-live="polite "id="currentSlide"></article>
 </main>
 </body></html>
