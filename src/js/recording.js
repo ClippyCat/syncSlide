@@ -70,7 +70,7 @@ function saveCurrentState() {
 		const currentTime = Date.now() - startTime;
 		const slide = document.getElementById("goTo").value;
 		const slideContent = document.getElementById("currentSlide").innerHTML;
-		const slideTitle = slideContent.querySelector('h2').innerText);
+		const slideTitle = slideContent.querySelector('h2').innerText;
 		recordingData.push({ time: parseFloat((currentTime /1000).toFixed(1)), slide: slide, title: slideTitle, content: slideContent });
 	}
 }

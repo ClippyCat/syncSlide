@@ -28,8 +28,8 @@ const updateMarkdown = async () => {
 	socket.send(JSON.stringify({ type: "text", text: markdownInput }));
 }
 
-textInput = document.getElementById("markdown-input");
-textInput.addEventListener("blur", updateMarkdown)
+const textInput = document.getElementById("markdown-input");
+textInput.addEventListener("blur", updateMarkdown);
 
 update = document.getElementById("update");
 update.addEventListener("click", updateSlide);
