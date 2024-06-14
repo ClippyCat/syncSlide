@@ -22,7 +22,8 @@ const updateSlide = async () => {
 
 const updateMarkdown = async () => {
 	const markdownInput = document.getElementById("markdown-input").value;
-	const render = md.render(markdownInput);
+	//const render = md.render(markdownInput);
+const render = texme.render(markdownInput);
 	const dom = stringToDOM(render);
 	getH2s(dom);
 	socket.send(JSON.stringify({ type: "text", text: markdownInput }));

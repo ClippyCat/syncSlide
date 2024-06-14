@@ -3,7 +3,7 @@ if (window.location.protocol === "http:"){
 WEBSOCKET_ADDR = "ws://127.0.0.1:5002/";
 }
 const socket = new WebSocket(WEBSOCKET_ADDR);
-const md = new remarkable.Remarkable({
+//const md = new remarkable.Remarkable({
 	html: true,
 });
 
