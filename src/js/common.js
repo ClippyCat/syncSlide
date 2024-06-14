@@ -4,8 +4,8 @@ WEBSOCKET_ADDR = "ws://127.0.0.1:5002/";
 }
 const socket = new WebSocket(WEBSOCKET_ADDR);
 //const md = new remarkable.Remarkable({
-//	html: true,
-//});
+	html: true,
+});
 
 function addSiblings(allHtml) {
 	const h2s = allHtml.querySelectorAll('h2');
