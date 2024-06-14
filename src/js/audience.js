@@ -17,7 +17,7 @@ const handleUpdate = (message) => {
 		return;
 	}
 	const slideIndex = message.slide;
-	const htmlString = md.render(TEXT_TO_RENDER);
+	const htmlString = texme.render(TEXT_TO_RENDER);
 	allHtml = stringToDOM(htmlString);
 	if (is_stage()) {
 		getH2s(allHtml)
