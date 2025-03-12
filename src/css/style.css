@@ -66,4 +66,8 @@ footer { padding-top: 16px; margin-bottom: 100px; }
 
 .post-header { margin-bottom: 8px; }
 
+/* in stage: */
+#markdown-input { display: block; width: 90%; margin: auto; height: 12em; }
+
+
 /*# sourceMappingURL=style.css.map */
