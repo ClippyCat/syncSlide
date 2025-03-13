@@ -34,73 +34,73 @@ WEBVTT
 <v Melody>Start presenting by pasting the slides into the markdown input field. I'll use the current presentation as an example.</v>
 
 01:19.000 --> 01:21.000
-<v Screen Reader>Heading level 0: Sync Slide</v>
+<v Screen Reader>[Screen Reader]: Heading level 0: Sync Slide</v>
 
 01:21.000 --> 01:22.000
-<v Screen Reader>Main landmark, input region "markdwon input", edit multiline</v>
+<v Screen Reader>[Screen Reader]: Main landmark, input region "markdwon input", edit multiline</v>
 
 01:22.000 --> 01:27.000
 <v Melody>Select a slide from the combo box.</v>
 
 01:27.000 --> 01:28.000
-<v Screen Reader>"Go to slide", combo box, "1: Introduction to the Problem", collapsed</v>
+<v Screen Reader>[Screen Reader]: "Go to slide", combo box, "1: Introduction to the Problem", collapsed</v>
 
 01:28.000 --> 01:30.000
-<v Screen Reader>Combo box expanded</v>
+<v Screen Reader>[Screen Reader]: Combo box expanded</v>
 
 01:30.000 --> 01:32.000
-<v Screen Reader>"Stage | SyncSlide" document, main landmark [audible beep]</v>
+<v Screen Reader>[Screen Reader]: "Stage | SyncSlide" document, main landmark [audible beep]</v>
 
 01:33.000 --> 01:36.000
 <v Melody>Then click the Update button to display the content.</v>
 
 01:36.000 --> 01:37.000
-<v Screen Reader>"Update" button</v>
+<v Screen Reader>[Screen Reader]: "Update" button</v>
 
 01:37.000 --> 01:41.000
 <v Melody>The audience received the contents without having access to the controls.</v>
 
 01:41.000 --> 01:43.000
-<v Screen Reader>"Audience | SyncSlide" document</v>
+<v Screen Reader>[Screen Reader]: "Audience | SyncSlide" document</v>
 
 01:43.000 --> 01:46.000
-<v Screen Reader>Heading level 1: "SyncSlide -- My Solution to Improve Presentation Accessibility"</v>
+<v Screen Reader>[Screen Reader]: Heading level 1: "SyncSlide -- My Solution to Improve Presentation Accessibility"</v>
 
 01:46.000 --> 01:54.000
 <v Melody>The record button starts a timer, which tracks the content and the timestamp on every update.</v>
 
 01:54.000 --> 01:57.000
-<v Screen Reader>Main landmark, record region, record button. Pause.</v>
+<v Screen Reader>[Screen Reader]: Main landmark, record region, record button. Pause.</v>
 
 01:57.000 --> 02:01.000
 <v Melody>The presenter can pause the recording for a break.</v>
 
 02:02.000 --> 02:04.000
-<v Screen Reader>Resume</v>
+<v Screen Reader>[Screen Reader]: Resume</v>
 
 02:04.000 --> 02:06.000
 <v Melody>Continue on to the rest of the slides.</v>
 
 02:06.000 --> 02:06.999
-<v Screen Reader>Pause.</v>
+<v Screen Reader>[Screen Reader]: Pause.</v>
 
 02:07.000 --> 02:07.999
-<v Screen Reader>Input region: "Go to slide" combo box. (audible input sound)</v>
+<v Screen Reader>[Screen Reader]: Input region: "Go to slide" combo box. (audible input sound)</v>
 
 02:08.000 --> 02:09.000
-<v Screen Reader>"2: What is SyncSlide?"</v>
+<v Screen Reader>[Screen Reader]: "2: What is SyncSlide?"</v>
 
 02:09.000 --> 02:11.000
-<v Screen Reader>"3: Demo: HTML and CSS"</v>
+<v Screen Reader>[Screen Reader]: "3: Demo: HTML and CSS"</v>
 
 02:11.000 --> 02:11.999
-<v Screen Reader>"Update" button</v>
+<v Screen Reader>[Screen Reader]: "Update" button</v>
 
 02:13.000 --> 02:17.000
 <v Melody>Stop recording to export the data, then sync with a video for playback.</v>
 
 02:17.000 --> 02:19.000
-<v Screen Reader>"Stop" button</v>
+<v Screen Reader>[Screen Reader]: "Stop" button</v>
 
 02:20.000 --> 02:25.000
 <v Melody>SyncSlide is in its alpha stage, so I'm constantly looking to improve the project.</v>
