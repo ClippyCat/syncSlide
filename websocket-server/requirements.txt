@@ -1,2 +1,4 @@
 aiohttp
+aiohttp_jinja2
+jinja2
 simple_websocket

@@ -3,6 +3,9 @@
 import json
 from aiohttp import web
 from simple_websocket import AioServer, ConnectionClosed
+import jinja2
+import aiohttp_jinja2 as aj
+
 
 app = web.Application()
 
@@ -62,12 +65,20 @@ async def broadcast_to_all(request):
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
-async def hello(request):
-	return web.Response(text="<h1>Hello, world!</h1>", content_type="text/html")
+@aj.template("audience.html")
+async def audience(request):
+	return {}
+
+@aj.template("stage.html")
+async def stage(request):
+	return {}
+
+aj.setup(app, loader=jinja2.FileSystemLoader("templates"))
 
 # route broadcast_to_all to root (/) URL.
 app.add_routes([
-	web.get('/', hello),
+	web.get('/audience', audience),
+	web.get('/stage', stage),
 	web.get('/ws', broadcast_to_all),
 ])
 
