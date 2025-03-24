@@ -69,6 +69,14 @@ async def broadcast_to_all(request):
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
+@aj.template("join.html")
+async def join(request):
+	return {}
+
+@aj.template("start.html")
+async def start(request):
+	return {}
+
 @aj.template("audience.html")
 async def audience(request):
 	return {}
@@ -83,7 +91,9 @@ aj.setup(app, loader=jinja2.FileSystemLoader("templates"))
 app.add_routes([
 	web.static('/js', '../src/js/'),
 	web.static('/css', '../src/css/'),
+	web.get('/audience', join),
 	web.get('/audience/{pid}', audience),
+	web.get('/stage', start),
 	web.get('/stage/{pid}', stage),
 	web.get('/ws/{pid}', broadcast_to_all),
 ])
