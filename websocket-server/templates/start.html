@@ -1,9 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+{%set title="Start"%}
+</head>
+<body>
+{%include "/partial/header.html"%}
+<main>
 <h2>Start Presentation</h2>
 <form id="joinForm">
 <label for="code">Presentation Code</label>
 <input type="text" id="code" name="code" required>
 <button type="submit">Start</button>
 </form>
+</main>
+</body>
 
 <script>
 document.getElementById("joinForm").addEventListener("submit", function(event) {
@@ -14,3 +25,4 @@ window.location.href = window.location.origin + window.location.pathname + "/" +
 }
 });
 </script>
+</html>
