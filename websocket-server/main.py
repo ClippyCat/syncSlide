@@ -62,8 +62,14 @@ async def broadcast_to_all(request):
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
+async def hello(request):
+    return web.Response(text="<h1>Hello, world!</h1>", content_type="text/html")
+
 # route broadcast_to_all to root (/) URL.
-app.add_routes([web.get('/', broadcast_to_all)])
+app.add_routes([
+    web.get('/hello', hello),
+    web.get('/', broadcast_to_all),
+])
 
 # if the file is being run from the command line
 if __name__ == '__main__':
