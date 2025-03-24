@@ -81,8 +81,8 @@ aj.setup(app, loader=jinja2.FileSystemLoader("templates"))
 
 # route broadcast_to_all to root (/) URL.
 app.add_routes([
-	web.get('/audience', audience),
-	web.get('/stage', stage),
+	web.get('/audience/{pid}', audience),
+	web.get('/stage/{pid}', stage),
 	web.get('/ws/{pid}', broadcast_to_all),
 ])
 
