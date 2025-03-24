@@ -1,6 +1,6 @@
 # Adapted from simple_websocket demo: https://simple-websocket.readthedocs.io/en/latest/intro.html#server-example-2-aiohttp
 
-import json
+import json, signal
 from aiohttp import web
 from simple_websocket import AioServer, ConnectionClosed
 import jinja2
@@ -13,6 +13,15 @@ SLIDE_CONTENTS = dict()
 SLIDE_IDX = dict()
 
 clients = dict()
+
+def cleanup(_signame, _stackframe):
+	print("Cleaning up abandoned presentations...", end="")
+	for pid in SLIDE_CONTENTS.keys():
+		if pid not in clients:
+			del SLIDE_CONTENTS[pid]
+		if pid not in SLIDE_IDX:
+			del SLIDE_IDX[pid]
+	print("done")
 
 def add_client(ws, pid):
 	uid = 0
@@ -100,4 +109,5 @@ app.add_routes([
 
 # if the file is being run from the command line
 if __name__ == '__main__':
+	signal.signal(signal.SIGUSR1, cleanup)
 	web.run_app(app, port=5002)
