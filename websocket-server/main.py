@@ -9,59 +9,63 @@ import aiohttp_jinja2 as aj
 
 app = web.Application()
 
-SLIDE_CONTENTS = None
-SLIDE_IDX = None
+SLIDE_CONTENTS = dict()
+SLIDE_IDX = dict()
 
-clients = []
+clients = dict()
 
-def add_client(ws):
+def add_client(ws, pid):
 	uid = 0
-	if len(clients) != 0:
-		uid = max([x for (x,y) in clients])
+	if pid not in clients:
+		clients[pid] = []
+	if len(clients[pid]) != 0:
+		uid = max([x for (x,y) in clients[pid]])
 	uid += 1
-	clients.append((uid, ws))
+	clients[pid].append((uid, ws))
 	return uid
 
-def remove_client(uid):
-	idx = [i for (i,(x,y)) in enumerate(clients) if x == uid]
+def remove_client(uid, pid):
+	idx = [i for (i,(x,y)) in enumerate(clients[pid]) if x == uid]
 	if len(idx) == 1:
-		del clients[idx[0]]
+		del clients[pid][idx[0]]
 
 # no need for async since we are not waiting on sending/receiving data
-def update_active_slide_data(raw_msg):
+# pid = presentation id
+def update_active_slide_data(raw_msg, pid):
 	# use global vars instead of creating new, local vars
 	global SLIDE_CONTENTS
 	global SLIDE_IDX
 	# BTW json is a module, this vairbale can not also be called json
 	json_msg = json.loads(raw_msg)
 	if json_msg["type"] == "text":
-		SLIDE_CONTENTS = json_msg["text"]
+		SLIDE_CONTENTS[pid] = json_msg["text"]
 	elif json_msg["type"] == "slide":
-		SLIDE_IDX = json_msg["slide"]
+		SLIDE_IDX[pid] = json_msg["slide"]
 
-async def send_active_slide_data(ws):
+async def send_active_slide_data(ws, pid):
 	global SLIDE_CONTENTS
 	global SLIDE_IDX
-	if not SLIDE_CONTENTS or not SLIDE_IDX:
+	if pid not in SLIDE_CONTENTS or not SLIDE_CONTENTS[pid] or not SLIDE_IDX[pid]:
 		return
-	await ws.send(json.dumps({"type": "text", "text": SLIDE_CONTENTS}))
-	await ws.send(json.dumps({"type": "slide", "slide": SLIDE_IDX}))
+	await ws.send(json.dumps({"type": "text", "text": SLIDE_CONTENTS[pid]}))
+	await ws.send(json.dumps({"type": "slide", "slide": SLIDE_IDX[pid]}))
 
 async def broadcast_to_all(request):
+	pid = request.match_info["pid"]
 	ws = await AioServer.accept(aiohttp=request)
-	client_idx = add_client(ws)
-	await send_active_slide_data(ws)
+	client_idx = add_client(ws, pid)
+	await send_active_slide_data(ws, pid)
 	try:
 		while True:
 # wait for this specific client to send a message to the server
 			data = await ws.receive()
-			update_active_slide_data(data)
+			update_active_slide_data(data, pid)
 # send each and every client the same message
-			for (_,client) in clients:
+			for (_,client) in clients[pid]:
 				await client.send(data)
 # if client disconnected, do nothing
 	except ConnectionClosed:
-		remove_client(client_idx)
+		remove_client(client_idx, pid)
 # must return a valid HTTP response, even if it is a blank string
 	return web.Response(text='')
 
@@ -79,7 +83,7 @@ aj.setup(app, loader=jinja2.FileSystemLoader("templates"))
 app.add_routes([
 	web.get('/audience', audience),
 	web.get('/stage', stage),
-	web.get('/ws', broadcast_to_all),
+	web.get('/ws/{pid}', broadcast_to_all),
 ])
 
 # if the file is being run from the command line
