@@ -16,10 +16,10 @@ clients = dict()
 
 def cleanup(_signame, _stackframe):
 	print("Cleaning up abandoned presentations...", end="")
-	for pid in SLIDE_CONTENTS.keys():
-		if pid not in clients:
+	pids = list(SLIDE_CONTENTS.keys())
+	for pid in pids:
+		if pid not in clients or len(clients[pid]) == 0:
 			del SLIDE_CONTENTS[pid]
-		if pid not in SLIDE_IDX:
 			del SLIDE_IDX[pid]
 	print("done")
 
@@ -54,7 +54,7 @@ def update_active_slide_data(raw_msg, pid):
 async def send_active_slide_data(ws, pid):
 	global SLIDE_CONTENTS
 	global SLIDE_IDX
-	if pid not in SLIDE_CONTENTS or not SLIDE_CONTENTS[pid] or not SLIDE_IDX[pid]:
+	if pid not in SLIDE_CONTENTS or pid not in SLIDE_IDX or len(SLIDE_CONTENTS[pid]) == 0 or len(SLIDE_IDX[pid]) == 0:
 		return
 	await ws.send(json.dumps({"type": "text", "text": SLIDE_CONTENTS[pid]}))
 	await ws.send(json.dumps({"type": "slide", "slide": SLIDE_IDX[pid]}))
