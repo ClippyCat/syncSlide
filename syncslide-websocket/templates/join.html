@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+{%set title="Join"%}
+{%include "partial/head.html"%}
+</head>
+<body>
+{%include "partial/header.html"%}
+<main>
+<h2>Join Presentation</h2>
+<form id="joinForm">
+<label for="code">Presentation Code</label>
+<input type="text" id="code" name="code" required>
+<button type="submit">Join</button>
+</form>
+</main>
+</body>
+
+<script>
+document.getElementById("joinForm").addEventListener("submit", function(event) {
+event.preventDefault();
+let code = document.getElementById("code").value.trim();
+if (code) {
+window.location.href = window.location.origin + window.location.pathname + "/" + encodeURIComponent(code);
+}
+});
+</script>
+</html>
