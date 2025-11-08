@@ -1,5 +1,6 @@
 # Update pages
-sudo cp -r syncSlide/src/* /usr/share/caddy/public/syncslide/
+cd syncSlide/
+cargo build
 
 # Update caddy
 sudo cp syncSlide/config/syncSlide.conf /etc/caddy/conf.d

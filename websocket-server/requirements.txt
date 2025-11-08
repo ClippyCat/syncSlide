@@ -1,6 +1,0 @@
-aiohttp
-aiohttp_jinja2
-aiohttp_session
-starlette
-jinja2
-simple_websocket

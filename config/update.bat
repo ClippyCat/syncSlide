@@ -1,1 +1,1 @@
-ssh arch@clippycat.ca "cd syncSlide; git pull origin main --rebase; cd ~; sudo cp -r syncSlide/src/* /usr/share/caddy/public/syncslide/; sudo cp syncSlide/config/syncSlide.conf /etc/caddy/conf.d; sudo chown root:root /etc/caddy/conf.d/syncSlide.conf; sudo systemctl reload caddy"
+ssh arch@clippycat.ca "cd syncSlide; git pull origin main --rebase; carge build; cd ~; sudo cp syncSlide/config/syncSlide.conf /etc/caddy/conf.d; sudo chown root:root /etc/caddy/conf.d/syncSlide.conf; sudo systemctl reload caddy"

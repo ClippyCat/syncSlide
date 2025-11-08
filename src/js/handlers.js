@@ -17,7 +17,7 @@ function getH2s(allHtml) {
 
 const updateSlide = async () => {
 	const slideChoice = document.getElementById("goTo").value;
-	socket.send(JSON.stringify({ type: "slide", slide: slideChoice }));
+	socket.send(JSON.stringify({ type: "slide", data: Number(slideChoice) }));
 }
 
 const updateMarkdown = async () => {
@@ -25,7 +25,7 @@ const updateMarkdown = async () => {
 	const render = md.render(markdownInput);
 	const dom = stringToDOM(render);
 	getH2s(dom);
-	socket.send(JSON.stringify({ type: "text", text: markdownInput }));
+	socket.send(JSON.stringify({ type: "text", data: markdownInput }));
 }
 
 const textInput = document.getElementById("markdown-input");

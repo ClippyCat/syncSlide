@@ -13,10 +13,10 @@ return tempElement;
 const handleUpdate = (message) => {
 	message = JSON.parse(message.data);
 	if (message.type === "text") {
-		TEXT_TO_RENDER = message.text;
+		TEXT_TO_RENDER = message.data;
 		return;
 	}
-	const slideIndex = message.slide;
+	const slideIndex = message.data;
 	const htmlString = md.render(TEXT_TO_RENDER);
 	allHtml = stringToDOM(htmlString);
 	if (is_stage()) {
