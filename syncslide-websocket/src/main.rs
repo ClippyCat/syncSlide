@@ -134,9 +134,11 @@ fn handle_socket(
     state: &mut AppState,
 ) -> Result<bool, &'static str> {
     let Ok(msg) = msg else {
+        cleanup(state);
         return Err("Disconnected");
     };
     if let Message::Close(_) = msg {
+        cleanup(state);
         return Err("Closed");
     }
     let msg: SlideMessage = match serde_json::from_str(msg.to_text().unwrap()) {
@@ -149,6 +151,7 @@ fn handle_socket(
     update_slide(pid, msg.clone(), state);
 
     if tx.send(msg).is_err() {
+        cleanup(state);
         // disconnected
         return Err("Channel disconnected!");
     }
@@ -187,6 +190,7 @@ async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState, auth
         }
     };
     let () = or(socket_handler, channel_handler).await;
+    drop(pres);
 }
 
 async fn join(State(tera): State<Arc<Tera>>) -> Html<String> {
@@ -250,16 +254,9 @@ async fn index(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl
 }
 
 /// Dynamic cleanup of still open presentations.
-///
-/// This takes a "stop-the-world" approach to finding and dynamically dropping the memory for
-/// presentations without active listeners.
-///
-/// TODO: more effective solution via counting the number of _other_ connections each time a client
-/// is disconnected, and freeing the memory then.
-/// This would be vastly more efficent and scale better.
 fn cleanup(state: &mut AppState) {
     let mut slides = state.slides.lock().unwrap();
-    slides.retain(|_k, v| Arc::strong_count(v) == 1);
+    slides.retain(|_k, v| Arc::strong_count(v) > 1);
 }
 
 #[tokio::main(flavor = "current_thread")]
