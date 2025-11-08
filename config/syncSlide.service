@@ -16,13 +16,13 @@ Description=SyncSlide
 # change lowercase "user" to the user which will be running the program: this is usually the one whoes home directory the project is in
 User=arch
 # change to where the directory of the project is
-WorkingDirectory=/home/arch/syncSlide/websocket-server
+WorkingDirectory=/home/arch/syncSlide/syncslide-websocket/
 # leave Type= and RemainAfterExit= alone; these specify the type of program that is being run
 Type=simple
 RemainAfterExit=yes
 # replace with FULL PATH of command you want to run,
 # you can find that by running `which MY_COMMAND_HERE`
-ExecStart=/home/arch/syncSlide/websocket-server/env/bin/python main.py
+ExecStart=/home/arch/syncSlide/syncslide-websocket/target/debug/syncslide-websocket
 
 # instructions on how to kill the process
 # this is a graceful exit and should not be modified unless you know which signal
