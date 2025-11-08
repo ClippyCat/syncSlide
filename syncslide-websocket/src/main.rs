@@ -7,18 +7,24 @@
 #![deny(clippy::all, clippy::pedantic, rustdoc::all, unsafe_code, missing_docs)]
 
 use axum::{
-    Router,
+    Form, Router,
     extract::{
-        Path, State,
+        FromRef, Path, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
-    response::{Html, Response},
-    routing::get,
+    http::StatusCode,
+    response::{Html, IntoResponse, Redirect, Response},
+    routing::{get, post},
 };
+use axum_login::AuthManagerLayerBuilder;
 use futures_lite::future::or;
 use futures_util::{SinkExt, StreamExt};
+use sqlx::SqlitePool;
 use tera::{Context, Tera};
+use time::Duration;
 use tower_http::services::ServeDir;
+use tower_sessions::{Expiry, SessionManagerLayer};
+use tower_sessions_sqlx_store::SqliteStore;
 
 use tokio::sync::broadcast::{self, Receiver, Sender};
 
@@ -31,6 +37,9 @@ use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
+
+mod db;
+use db::{AuthSession, Backend, LoginForm};
 
 /// A message indicating a _change_ in [`Presentation`] state.
 #[derive(Clone, Serialize, Deserialize)]
@@ -56,21 +65,38 @@ pub struct Presentation {
 }
 
 /// The state of the entire application.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct AppState {
     /// Used to render HTML templates.
     tera: Arc<Tera>,
     /// Used to store all the ongoing presentation.
     /// They Key here is a user-defined string, and the value is a [`Presentation`] struct.
     slides: Arc<Mutex<HashMap<String, Arc<Mutex<Presentation>>>>>,
+    db_pool: SqlitePool,
+}
+
+impl FromRef<AppState> for SqlitePool {
+    fn from_ref(state: &AppState) -> Self {
+        state.db_pool.clone()
+    }
+}
+impl FromRef<AppState> for Arc<Tera> {
+    fn from_ref(state: &AppState) -> Self {
+        Arc::clone(&state.tera)
+    }
 }
 
 async fn broadcast_to_all(
     ws: WebSocketUpgrade,
     Path(pid): Path<String>,
     State(state): State<AppState>,
+    auth_session: AuthSession,
 ) -> Response {
-    ws.on_upgrade(|socket| ws_handle(socket, pid, state))
+    if auth_session.user.is_some() {
+        ws.on_upgrade(|socket| ws_handle(socket, pid, state, true))
+    } else {
+        ws.on_upgrade(|socket| ws_handle(socket, pid, state, false))
+    }
 }
 
 fn update_slide(pid: &str, msg: SlideMessage, state: &mut AppState) {
@@ -129,7 +155,7 @@ fn handle_socket(
     Ok(true)
 }
 
-async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState) {
+async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState, auth: bool) {
     let pres = add_client_handler_channel(pid.clone(), &mut state);
     let (mut tx, mut rx, text, slide) = {
         let p = pres.lock().unwrap();
@@ -145,6 +171,9 @@ async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState) {
     let (mut sock_send, mut sock_recv) = socket.split();
     let socket_handler = async {
         while let Some(msg) = sock_recv.next().await {
+            if !auth {
+                continue;
+            }
             if handle_socket(msg, &pid, &mut tx, &mut state1).is_err() {
                 return;
             }
@@ -160,25 +189,64 @@ async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState) {
     let () = or(socket_handler, channel_handler).await;
 }
 
-async fn join(State(st): State<AppState>) -> Html<String> {
-    let html = st.tera.render("join.html", &Context::new()).unwrap();
+async fn join(State(tera): State<Arc<Tera>>) -> Html<String> {
+    let html = tera.render("join.html", &Context::new()).unwrap();
     Html(html)
 }
-async fn audience(State(st): State<AppState>) -> Html<String> {
-    let html = st.tera.render("audience.html", &Context::new()).unwrap();
+async fn audience(State(tera): State<Arc<Tera>>) -> Html<String> {
+    let html = tera.render("audience.html", &Context::new()).unwrap();
     Html(html)
 }
-async fn start(State(st): State<AppState>) -> Html<String> {
-    let html = st.tera.render("start.html", &Context::new()).unwrap();
+async fn start(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+    if auth_session.user.is_none() {
+        return Redirect::to("/auth/login").into_response();
+    }
+    let html = tera.render("start.html", &Context::new()).unwrap();
+    Html(html).into_response()
+}
+async fn stage(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+    if auth_session.user.is_none() {
+        return Redirect::to("/auth/login").into_response();
+    }
+    let html = tera.render("stage.html", &Context::new()).unwrap();
+    Html(html).into_response()
+}
+async fn login(State(tera): State<Arc<Tera>>) -> Html<String> {
+    let html = tera.render("login.html", &Context::new()).unwrap();
     Html(html)
 }
-async fn stage(State(st): State<AppState>) -> Html<String> {
-    let html = st.tera.render("stage.html", &Context::new()).unwrap();
-    Html(html)
+
+async fn login_process(
+    State(tera): State<Arc<Tera>>,
+    mut auth_session: AuthSession,
+    Form(login): Form<LoginForm>,
+) -> impl IntoResponse {
+    let user = match auth_session.authenticate(login).await {
+        Ok(Some(u)) => u,
+        Ok(None) => {
+            return Html(tera.render("login.html", &Context::new()).unwrap()).into_response();
+        }
+        Err(_) => {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+    if auth_session.login(&user).await.is_err() {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    }
+    Redirect::to("/").into_response()
 }
-async fn index(State(st): State<AppState>) -> Html<String> {
-    let html = st.tera.render("index.html", &Context::new()).unwrap();
-    Html(html)
+async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
+    match auth_session.logout().await {
+        Ok(_) => Redirect::to("/").into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn index(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+    let mut ctx = Context::new();
+    ctx.insert("user", &auth_session.user);
+    let html = tera.render("index.html", &ctx).unwrap();
+    Html(html).into_response()
 }
 
 /// Dynamic cleanup of still open presentations.
@@ -199,12 +267,25 @@ async fn main() {
     // USR1 signal causes cleanup routine
     let sig_handle = Signals::new([SIGUSR1]).unwrap().handle();
     let tera = Tera::new("templates/**/*.html").unwrap();
+    let db_pool = SqlitePool::connect("sqlite://db.sqlite3").await.unwrap();
+    let session_store = SqliteStore::new(db_pool.clone());
+    session_store.migrate().await.unwrap();
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(true)
+        .with_expiry(Expiry::OnInactivity(Duration::days(1)));
+    let backend = Backend::new(db_pool.clone());
+    let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
+
     let mut state = AppState {
         tera: Arc::new(tera),
         slides: Arc::new(Mutex::new(HashMap::new())),
+        db_pool,
     };
     let app = Router::new()
         .route("/", get(index))
+        .route("/auth/login", get(login))
+        .route("/auth/login", post(login_process))
+        .route("/auth/logout", get(logout))
         .route("/audience", get(join))
         .route("/audience/{pid}", get(audience))
         .route("/stage", get(start))
@@ -213,7 +294,8 @@ async fn main() {
         .nest_service("/css", ServeDir::new("../src/css/"))
         .nest_service("/js", ServeDir::new("../src/js/"))
         .nest_service("/demo", ServeDir::new("../src/demo/"))
-        .with_state(state.clone());
+        .with_state(state.clone())
+        .layer(auth_layer);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:5002").await.unwrap();
     let signal_task = tokio::spawn(async move { cleanup(&mut state) });
     axum::serve(listener, app).await.unwrap();

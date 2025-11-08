@@ -4,14 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = { version = "0.8.6", default-features = false, features = ["ws", "http1"] }
+argon2 = { version = "0.5.3", default-features = false, features = ["password-hash", "std"] }
+axum = { version = "0.8.6", default-features = false, features = ["ws", "http1", "form"] }
+axum-login = { version = "0.18.0", default-features = false }
 futures-lite = { version = "2.6.1", default-features = false }
 futures-util = "0.3.31"
 serde = { version = "1.0", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
 signal-hook = { version = "0.3.18", default-features = false }
 signal-hook-tokio = { version = "0.3.1", default-features = false }
+sqlx = { version = "0.8.6", default-features = false, features = ["sqlite", "macros", "runtime-tokio"] }
 tera = { version = "1.20.1", default-features = false }
+thiserror = { version = "2.0.17", default-features = false }
+time = { version = "0.3.44", default-features = false }
 tokio = { version = "1.0", default-features = false, features = ["macros"] }
 tokio-util = "0.7.17"
 tower-http = { version = "0.6.6", default-features = false, features = ["fs"] }
+tower-sessions = { version = "0.14.0", default-features = false, features = ["axum-core"] }
+tower-sessions-sqlx-store = { version = "0.15.0", default-features = false, features = ["sqlite"] }
