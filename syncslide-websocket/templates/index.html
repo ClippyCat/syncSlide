@@ -9,7 +9,12 @@
 <body>
 <nav>
 <ul>
+{% if user %}
 <li><a href="/stage">Start presentation</a></li>
+<li><a href="/auth/logout">Logout</a></li>
+{% else %}
+<li><a href="/auth/login">Login</a></li>
+{% endif %}
 <li><a href="/audience">Join presentation</a></li>
 <li><a href="/demo">Demo</a></li>
 <li><a href="https://github.com/ClippyCat/syncslide/">SyncSlide on github</a></li>

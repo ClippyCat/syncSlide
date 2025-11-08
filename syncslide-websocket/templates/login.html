@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+{%set title="Join"%}
+{%include "partial/head.html"%}
+</head>
+<body>
+{%include "partial/header.html"%}
+<main>
+<h2>Login</h2>
+<form method="POST" action="/auth/login">
+<label for="uname">Username</label>
+<input type="text" id="uname" name="username" required>
+<label for="pwd">Username</label>
+<input type="password" id="pwd" name="password" required>
+<button type="submit">Login</button>
+</form>
+</main>
+</body>
+
+</html>
