@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+{%set title="Presentations"%}
+{%include "partial/head.html"%}
+</head>
+<body>
+{%include "partial/header.html"%}
+<main>
+<h2>Your Presentations</h2>
+{% if press | length > 0 %}
+<ul>
+	{% for pres in press %}
+		<li><a href="/stage/{{ pres.id }}">{{ pres.name }}</a></li>
+	{% endfor %}
+{% else %}
+No presentations.
+{% endif %}
+</ul>
+</main>
+</body>
+
+</html>
