@@ -236,7 +236,7 @@ async fn start_pres(
     let Ok(pres) = pres else {
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     };
-    Redirect::to(&format!("/stage/{}", pres.id)).into_response()
+    Redirect::to(&format!("/{}/{}", user.name, pres.id)).into_response()
 }
 
 async fn present(
