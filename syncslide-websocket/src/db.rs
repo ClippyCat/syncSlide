@@ -77,10 +77,18 @@ impl Presentation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    id: i64,
-    name: String,
-    email: String,
-    password: String,
+    pub id: i64,
+    pub name: String,
+    pub email: String,
+    pub password: String,
+}
+impl User {
+    pub async fn get_by_name(name: String, db: &SqlitePool) -> Result<Option<User>, Error> {
+        sqlx::query_as!(User, "SELECT * FROM users WHERE name = ?;", name)
+            .fetch_optional(&*db)
+            .await
+            .map_err(Error::from)
+    }
 }
 impl AuthUser for User {
     type Id = i64;
