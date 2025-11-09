@@ -1,7 +1,24 @@
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use argon2::password_hash::{PasswordHashString as PwdString, SaltString, rand_core::OsRng};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum_login::{AuthUser, AuthnBackend, UserId};
 use serde::{Deserialize, Serialize};
 use sqlx::{self, SqlitePool};
+
+/// Add a new user, with a specific name, email and password.
+#[derive(Deserialize)]
+pub struct AddUserForm {
+    pub name: String,
+    pub email: String,
+    pub password: String,
+}
+
+/// Change password form, old, new, and confirmation.
+#[derive(Deserialize)]
+pub struct ChangePasswordForm {
+    pub old: String,
+    pub new: String,
+    pub confirm: String,
+}
 
 /// Login form with username and password.
 #[derive(Deserialize)]
@@ -83,6 +100,23 @@ pub struct User {
     pub password: String,
 }
 impl User {
+    pub async fn change_password(&self, new: String, db: &SqlitePool) -> Result<(), Error> {
+        let pwdstr = Argon2::default()
+            .hash_password(new.as_bytes(), &SaltString::generate(OsRng::default()))
+            .unwrap()
+            .serialize()
+            .as_str()
+            .to_string();
+        sqlx::query!(
+            "UPDATE users SET password = ? WHERE id = ?;",
+            pwdstr,
+            self.id
+        )
+        .execute(*&db)
+        .await
+        .map_err(Error::from)
+        .map(|_| ())
+    }
     pub async fn get_by_name(name: String, db: &SqlitePool) -> Result<Option<User>, Error> {
         sqlx::query_as!(User, "SELECT * FROM users WHERE name = ?;", name)
             .fetch_optional(&*db)

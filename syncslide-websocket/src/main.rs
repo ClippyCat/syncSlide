@@ -6,8 +6,10 @@
 //!
 #![deny(clippy::all, clippy::pedantic, rustdoc::all, unsafe_code, missing_docs)]
 
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::{
     Form, Router,
+    body::Body,
     extract::{
         FromRef, Path, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -20,7 +22,7 @@ use axum_login::AuthManagerLayerBuilder;
 use futures_lite::future::or;
 use futures_util::{SinkExt, StreamExt};
 use sqlx::SqlitePool;
-use tera::{Context, Tera};
+use tera::{Context, Tera as TeraBase};
 use time::Duration;
 use tower_http::services::ServeDir;
 use tower_sessions::{Expiry, SessionManagerLayer};
@@ -39,7 +41,38 @@ use std::{
 };
 
 mod db;
-use db::{AuthSession, Backend, LoginForm, Presentation as DbPresentation, User};
+use db::{
+    AuthSession, Backend, ChangePasswordForm, LoginForm, Presentation as DbPresentation, User,
+};
+
+/// Wraps Tera renderer so that we can force a special render process.
+#[derive(Clone)]
+pub struct Tera {
+    tera: Arc<TeraBase>,
+}
+impl Tera {
+    fn new() -> Self {
+        Tera {
+            tera: Arc::new(TeraBase::new("templates/**/*.html").unwrap()),
+        }
+    }
+    /// Used to render Tera templates w/ additional automatic variables defined on every page.
+    async fn render(
+        &self,
+        name: &'static str,
+        mut ctx: Context,
+        auth_session: AuthSession,
+        db: SqlitePool,
+    ) -> Response<Body> {
+        if let Some(ref user) = auth_session.user {
+            ctx.insert("user", &user);
+            let pn = DbPresentation::num_for_user(&user, &db).await.unwrap();
+            ctx.insert("pres_num", &pn);
+        }
+        let html = self.tera.render(name, &ctx).unwrap();
+        Html(html).into_response()
+    }
+}
 
 /// A message indicating a _change_ in [`Presentation`] state.
 #[derive(Clone, Serialize, Deserialize)]
@@ -68,7 +101,7 @@ pub struct Presentation {
 #[derive(Clone)]
 pub struct AppState {
     /// Used to render HTML templates.
-    tera: Arc<Tera>,
+    tera: Tera,
     /// Used to store all the ongoing presentation.
     /// They Key here is a user-defined string, and the value is a [`Presentation`] struct.
     slides: Arc<Mutex<HashMap<String, Arc<Mutex<Presentation>>>>>,
@@ -80,9 +113,9 @@ impl FromRef<AppState> for SqlitePool {
         state.db_pool.clone()
     }
 }
-impl FromRef<AppState> for Arc<Tera> {
+impl FromRef<AppState> for Tera {
     fn from_ref(state: &AppState) -> Self {
-        Arc::clone(&state.tera)
+        state.tera.clone()
     }
 }
 
@@ -197,20 +230,28 @@ async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState, auth
     drop(pres);
 }
 
-async fn join(State(tera): State<Arc<Tera>>) -> Html<String> {
-    let html = tera.render("join.html", &Context::new()).unwrap();
-    Html(html)
+async fn join(
+    State(tera): State<Tera>,
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+) -> impl IntoResponse {
+    tera.render("join.html", Context::new(), auth_session, db)
+        .await
 }
-async fn audience(tera: Arc<Tera>) -> Html<String> {
-    let html = tera.render("audience.html", &Context::new()).unwrap();
-    Html(html)
+async fn audience(tera: Tera, auth_session: AuthSession, db: SqlitePool) -> impl IntoResponse {
+    tera.render("audieence.html", Context::new(), auth_session, db)
+        .await
 }
-async fn start(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+async fn start(
+    State(tera): State<Tera>,
+    auth_session: AuthSession,
+    State(db): State<SqlitePool>,
+) -> impl IntoResponse {
     if auth_session.user.is_none() {
         return Redirect::to("/auth/login").into_response();
     }
-    let html = tera.render("start.html", &Context::new()).unwrap();
-    Html(html).into_response()
+    tera.render("start.html", Context::new(), auth_session, db)
+        .await
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -240,12 +281,14 @@ async fn start_pres(
 }
 
 async fn present(
-    State(tera): State<Arc<Tera>>,
+    State(tera): State<Tera>,
     State(db): State<SqlitePool>,
     auth_session: AuthSession,
     Path((uname, pid)): Path<(String, i64)>,
 ) -> impl IntoResponse {
-    let audience_page = audience(Arc::clone(&tera)).await.into_response();
+    let audience_page = audience(tera.clone(), auth_session.clone(), db.clone())
+        .await
+        .into_response();
     let pres_user = User::get_by_name(uname, &db).await;
     let pres_user = match pres_user {
         Ok(Some(u)) => u,
@@ -268,7 +311,7 @@ async fn present(
 }
 
 async fn stage(
-    tera: Arc<Tera>,
+    tera: Tera,
     db: SqlitePool,
     auth_session: AuthSession,
     pid: i64,
@@ -279,15 +322,14 @@ async fn stage(
     let pres = DbPresentation::get_by_id(pid, &db).await.unwrap();
     let mut ctx = Context::new();
     ctx.insert("pres", &pres);
-    let html = tera.render("stage.html", &ctx).unwrap();
-    Html(html).into_response()
+    tera.render("stage.html", ctx, auth_session, db).await
 }
 async fn presentations(
-    State(tera): State<Arc<Tera>>,
+    State(tera): State<Tera>,
     State(db): State<SqlitePool>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    let Some(user) = auth_session.user else {
+    let Some(ref user) = auth_session.user else {
         return Redirect::to("/auth/login").into_response();
     };
     let press = DbPresentation::get_for_user(&user, &db).await;
@@ -296,24 +338,68 @@ async fn presentations(
     };
     let mut ctx = Context::new();
     ctx.insert("press", &press);
-    ctx.insert("user", &user);
-    let html = tera.render("presentations.html", &ctx).unwrap();
-    Html(html).into_response()
+    tera.render("presentations.html", ctx, auth_session, db)
+        .await
 }
-async fn login(State(tera): State<Arc<Tera>>) -> Html<String> {
-    let html = tera.render("login.html", &Context::new()).unwrap();
-    Html(html)
+async fn login(
+    State(tera): State<Tera>,
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+) -> impl IntoResponse {
+    tera.render("login.html", Context::new(), auth_session, db)
+        .await
+}
+async fn change_pwd(
+    State(db): State<SqlitePool>,
+    State(tera): State<Tera>,
+    auth_session: AuthSession,
+) -> impl IntoResponse {
+    let Some(ref user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    tera.render("user/change_pwd.html", Context::new(), auth_session, db)
+        .await
+}
+async fn change_pwd_form(
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+    Form(pwd_form): Form<ChangePasswordForm>,
+) -> impl IntoResponse {
+    let Some(user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    if pwd_form.new != pwd_form.confirm {
+        // TODO: send messages with response
+        return Redirect::to("/user/change_pwd").into_response();
+    }
+    let phash = PasswordHash::new(&user.password).unwrap();
+    if Argon2::default()
+        .verify_password(pwd_form.old.as_bytes(), &phash)
+        .is_err()
+    {
+        // TODO: send messages with response
+        return Redirect::to("/user/change_pwd").into_response();
+    }
+    if user.change_password(pwd_form.new, &db).await.is_err() {
+        // TODO: send messages with response
+        return Redirect::to("/user/change_pwd").into_response();
+    }
+    // TODO: send messages with response
+    return Redirect::to("/").into_response();
 }
 
 async fn login_process(
-    State(tera): State<Arc<Tera>>,
+    State(tera): State<Tera>,
+    State(db): State<SqlitePool>,
     mut auth_session: AuthSession,
     Form(login): Form<LoginForm>,
 ) -> impl IntoResponse {
     let user = match auth_session.authenticate(login).await {
         Ok(Some(u)) => u,
         Ok(None) => {
-            return Html(tera.render("login.html", &Context::new()).unwrap()).into_response();
+            return tera
+                .render("login.html", Context::new(), auth_session, db)
+                .await;
         }
         Err(_) => {
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
@@ -332,18 +418,12 @@ async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
 }
 
 async fn index(
-    State(tera): State<Arc<Tera>>,
+    State(tera): State<Tera>,
     auth_session: AuthSession,
     State(db): State<SqlitePool>,
 ) -> impl IntoResponse {
-    let mut ctx = Context::new();
-    ctx.insert("user", &auth_session.user);
-    if let Some(user) = auth_session.user {
-        let pn = DbPresentation::num_for_user(&user, &db).await.unwrap();
-        ctx.insert("pres_num", &pn);
-    }
-    let html = tera.render("index.html", &ctx).unwrap();
-    Html(html).into_response()
+    tera.render("index.html", Context::new(), auth_session, db)
+        .await
 }
 
 /// Dynamic cleanup of still open presentations.
@@ -356,18 +436,18 @@ fn cleanup(state: &mut AppState) {
 async fn main() {
     // USR1 signal causes cleanup routine
     let sig_handle = Signals::new([SIGUSR1]).unwrap().handle();
-    let tera = Tera::new("templates/**/*.html").unwrap();
     let db_pool = SqlitePool::connect("sqlite://db.sqlite3").await.unwrap();
     let session_store = SqliteStore::new(db_pool.clone());
     session_store.migrate().await.unwrap();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(true)
         .with_expiry(Expiry::OnInactivity(Duration::days(1)));
+    let tera = Tera::new();
     let backend = Backend::new(db_pool.clone());
     let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
 
     let mut state = AppState {
-        tera: Arc::new(tera),
+        tera,
         slides: Arc::new(Mutex::new(HashMap::new())),
         db_pool,
     };
@@ -377,6 +457,8 @@ async fn main() {
         .route("/auth/login", post(login_process))
         .route("/auth/logout", get(logout))
         .route("/user/presentations", get(presentations))
+        .route("/user/change_pwd", get(change_pwd))
+        .route("/user/change_pwd", post(change_pwd_form))
         .route("/join", get(join))
         .route("/stage", get(start))
         .route("/stage", post(start_pres))
