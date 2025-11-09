@@ -7,6 +7,7 @@
 </head>
 <body>
 {%include "partial/header.html"%}
+{%include "partial/nav.html"%}
 <main>
 <h2>Your Presentations</h2>
 {% if press | length > 0 %}
@@ -14,11 +15,10 @@
 	{% for pres in press %}
 		<li><a href="/{{ user.name }}/{{ pres.id }}">{{ pres.name }}</a></li>
 	{% endfor %}
-{% else %}
-No presentations.
-{% endif %}
 </ul>
+{% else %}
+<p>No presentations yet. <a href="/stage">Start one now!</a><p>
+{% endif %}
 </main>
-</body>
-
-</html>
+{%include "partial/footer.html"%}
+</body></html>

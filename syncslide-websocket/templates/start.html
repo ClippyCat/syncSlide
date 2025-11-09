@@ -7,14 +7,16 @@
 </head>
 <body>
 {%include "partial/header.html"%}
+{%include "partial/nav.html"%}
 <main>
 <h2>Start Presentation</h2>
 <form method="POST">
 <label for="name">Presentation Name</label>
 <input type="text" id="name" name="name" required>
-<button type="submit">New</button>
+<button type="submit">Start</button>
 </form>
 </main>
+{%include "partial/footer.html"%}
 </body>
 
 <script>

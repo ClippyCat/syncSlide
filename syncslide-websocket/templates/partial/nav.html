@@ -1,0 +1,14 @@
+<nav>
+<ul>
+<li><a href="/">Home</a></li>
+{% if user %}
+<li><a href="/stage">Start presentation</a></li>
+<li><a href="/user/presentations">Presentations ({{ pres_num }})</a></li>
+<li><a href="/user/change_pwd">Change Password</a></li>
+<li><a href="/auth/logout">Logout</a></li>
+{% else %}
+<li><a href="/auth/login">Login</a></li>
+{% endif %}
+<li><a href="/join">Join presentation</a></li>
+</ul>
+</nav>
