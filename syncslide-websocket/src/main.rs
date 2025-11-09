@@ -39,7 +39,7 @@ use std::{
 };
 
 mod db;
-use db::{AuthSession, Backend, LoginForm};
+use db::{AuthSession, Backend, LoginForm, Presentation as DbPresentation};
 
 /// A message indicating a _change_ in [`Presentation`] state.
 #[derive(Clone, Serialize, Deserialize)]
@@ -187,6 +187,10 @@ async fn ws_handle(mut socket: WebSocket, pid: String, mut state: AppState, auth
             update_slide(&pid, msg.clone(), &mut state);
             let text = serde_json::to_string(&msg).unwrap();
             sock_send.send(Message::from(text)).await.unwrap();
+            let id = pid.parse().unwrap();
+            if let SlideMessage::Text(text) = msg {
+                let _ = DbPresentation::update_content(id, text, &state.db_pool).await;
+            }
         }
     };
     let () = or(socket_handler, channel_handler).await;
@@ -208,11 +212,62 @@ async fn start(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl
     let html = tera.render("start.html", &Context::new()).unwrap();
     Html(html).into_response()
 }
-async fn stage(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct NameForm {
+    name: String,
+}
+
+async fn start_pres(
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+    Form(name_form): Form<NameForm>,
+) -> impl IntoResponse {
+    let Some(user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    if name_form.name.is_empty() {
+        return Redirect::to("/start").into_response();
+    }
+    let pres = DbPresentation::new(&user, name_form.name, &db).await;
+    if let Err(ref e) = pres {
+        println!("{e:?}");
+    }
+    let Ok(pres) = pres else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+    Redirect::to(&format!("/stage/{}", pres.id)).into_response()
+}
+async fn stage(
+    State(tera): State<Arc<Tera>>,
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+    Path(pid): Path<i64>,
+) -> impl IntoResponse {
     if auth_session.user.is_none() {
         return Redirect::to("/auth/login").into_response();
     }
-    let html = tera.render("stage.html", &Context::new()).unwrap();
+    let pres = DbPresentation::get_by_id(pid, &db).await.unwrap();
+    let mut ctx = Context::new();
+    ctx.insert("pres", &pres);
+    let html = tera.render("stage.html", &ctx).unwrap();
+    Html(html).into_response()
+}
+async fn presentations(
+    State(tera): State<Arc<Tera>>,
+    State(db): State<SqlitePool>,
+    auth_session: AuthSession,
+) -> impl IntoResponse {
+    let Some(user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    let press = DbPresentation::get_for_user(&user, &db).await;
+    let Ok(press) = press else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+    let mut ctx = Context::new();
+    ctx.insert("press", &press);
+    let html = tera.render("presentations.html", &ctx).unwrap();
     Html(html).into_response()
 }
 async fn login(State(tera): State<Arc<Tera>>) -> Html<String> {
@@ -246,9 +301,17 @@ async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
     }
 }
 
-async fn index(State(tera): State<Arc<Tera>>, auth_session: AuthSession) -> impl IntoResponse {
+async fn index(
+    State(tera): State<Arc<Tera>>,
+    auth_session: AuthSession,
+    State(db): State<SqlitePool>,
+) -> impl IntoResponse {
     let mut ctx = Context::new();
     ctx.insert("user", &auth_session.user);
+    if let Some(user) = auth_session.user {
+        let pn = DbPresentation::num_for_user(&user, &db).await.unwrap();
+        ctx.insert("pres_num", &pn);
+    }
     let html = tera.render("index.html", &ctx).unwrap();
     Html(html).into_response()
 }
@@ -283,9 +346,11 @@ async fn main() {
         .route("/auth/login", get(login))
         .route("/auth/login", post(login_process))
         .route("/auth/logout", get(logout))
+        .route("/user/presentations", get(presentations))
         .route("/audience", get(join))
         .route("/audience/{pid}", get(audience))
         .route("/stage", get(start))
+        .route("/stage", post(start_pres))
         .route("/stage/{pid}", get(stage))
         .route("/ws/{pid}", get(broadcast_to_all))
         .nest_service("/css", ServeDir::new("../src/css/"))
