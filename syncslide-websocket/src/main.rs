@@ -239,7 +239,7 @@ async fn join(
         .await
 }
 async fn audience(tera: Tera, auth_session: AuthSession, db: SqlitePool) -> impl IntoResponse {
-    tera.render("audieence.html", Context::new(), auth_session, db)
+    tera.render("audience.html", Context::new(), auth_session, db)
         .await
 }
 async fn start(
