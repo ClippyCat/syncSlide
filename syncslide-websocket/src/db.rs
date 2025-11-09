@@ -11,6 +11,71 @@ pub struct LoginForm {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Presentation {
+    pub id: i64,
+    pub user_id: i64,
+    pub content: String,
+    pub name: String,
+}
+impl Presentation {
+    pub async fn new(user: &User, name: String, db: &SqlitePool) -> Result<Presentation, Error> {
+        sqlx::query_as!(
+            Presentation,
+            "INSERT INTO presentation (user_id, name, content) VALUES (?, ?, ?)
+            RETURNING *;",
+            user.id,
+            name,
+            ""
+        )
+        .fetch_one(&*db)
+        .await
+        .map_err(Error::from)
+    }
+    pub async fn get_by_id(id: i64, db: &SqlitePool) -> Result<Option<Self>, Error> {
+        sqlx::query_as!(Presentation, "SELECT * FROM presentation WHERE id = ?;", id)
+            .fetch_optional(&*db)
+            .await
+            .map_err(Error::from)
+    }
+    pub async fn get_for_user(user: &User, db: &SqlitePool) -> Result<Vec<Self>, Error> {
+        sqlx::query_as!(
+            Presentation,
+            "SELECT * FROM presentation WHERE user_id = ?;",
+            user.id
+        )
+        .fetch_all(&*db)
+        .await
+        .map_err(Error::from)
+    }
+    pub async fn num_for_user(user: &User, db: &SqlitePool) -> Result<i64, Error> {
+        sqlx::query_scalar!(
+            "SELECT COUNT(id) as count FROM presentation WHERE user_id = ?;",
+            user.id
+        )
+        .fetch_one(&*db)
+        .await
+        .map_err(Error::from)
+    }
+    pub async fn update_content(
+        id: i64,
+        new_content: String,
+        db: &SqlitePool,
+    ) -> Result<(), Error> {
+        sqlx::query!(
+            "UPDATE presentation
+            SET content=?
+            WHERE id=?",
+            new_content,
+            id
+        )
+        .execute(&*db)
+        .await
+        .map_err(Error::from)
+        .map(|_| ())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     id: i64,
     name: String,
