@@ -39,7 +39,7 @@ use std::{
 };
 
 mod db;
-use db::{AuthSession, Backend, LoginForm, Presentation as DbPresentation};
+use db::{AuthSession, Backend, LoginForm, Presentation as DbPresentation, User};
 
 /// A message indicating a _change_ in [`Presentation`] state.
 #[derive(Clone, Serialize, Deserialize)]
@@ -201,7 +201,7 @@ async fn join(State(tera): State<Arc<Tera>>) -> Html<String> {
     let html = tera.render("join.html", &Context::new()).unwrap();
     Html(html)
 }
-async fn audience(State(tera): State<Arc<Tera>>) -> Html<String> {
+async fn audience(tera: Arc<Tera>) -> Html<String> {
     let html = tera.render("audience.html", &Context::new()).unwrap();
     Html(html)
 }
@@ -238,11 +238,40 @@ async fn start_pres(
     };
     Redirect::to(&format!("/stage/{}", pres.id)).into_response()
 }
-async fn stage(
+
+async fn present(
     State(tera): State<Arc<Tera>>,
     State(db): State<SqlitePool>,
     auth_session: AuthSession,
-    Path(pid): Path<i64>,
+    Path((uname, pid)): Path<(String, i64)>,
+) -> impl IntoResponse {
+    let audience_page = audience(Arc::clone(&tera)).await.into_response();
+    let pres_user = User::get_by_name(uname, &db).await;
+    let pres_user = match pres_user {
+        Ok(Some(u)) => u,
+        Ok(None) => return audience_page,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let pres = DbPresentation::get_by_id(pid, &db).await;
+    let _pres = match pres {
+        Ok(Some(p)) => p,
+        Ok(None) => return audience_page,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let Some(ref user) = auth_session.user else {
+        return audience_page;
+    };
+    if user.id != pres_user.id {
+        return audience_page;
+    }
+    stage(tera, db, auth_session, pid).await.into_response()
+}
+
+async fn stage(
+    tera: Arc<Tera>,
+    db: SqlitePool,
+    auth_session: AuthSession,
+    pid: i64,
 ) -> impl IntoResponse {
     if auth_session.user.is_none() {
         return Redirect::to("/auth/login").into_response();
@@ -267,6 +296,7 @@ async fn presentations(
     };
     let mut ctx = Context::new();
     ctx.insert("press", &press);
+    ctx.insert("user", &user);
     let html = tera.render("presentations.html", &ctx).unwrap();
     Html(html).into_response()
 }
@@ -347,11 +377,10 @@ async fn main() {
         .route("/auth/login", post(login_process))
         .route("/auth/logout", get(logout))
         .route("/user/presentations", get(presentations))
-        .route("/audience", get(join))
-        .route("/audience/{pid}", get(audience))
+        .route("/join", get(join))
         .route("/stage", get(start))
         .route("/stage", post(start_pres))
-        .route("/stage/{pid}", get(stage))
+        .route("/{uname}/{pid}", get(present))
         .route("/ws/{pid}", get(broadcast_to_all))
         .nest_service("/css", ServeDir::new("../src/css/"))
         .nest_service("/js", ServeDir::new("../src/js/"))
