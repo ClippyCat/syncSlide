@@ -10,6 +10,8 @@
 <main>
 <h2>Join Presentation</h2>
 <form id="joinForm">
+<label for="uname">Username</label>
+<input type="text" id="uname" name="username" required>
 <label for="code">Presentation Code</label>
 <input type="text" id="code" name="code" required>
 <button type="submit">Join</button>
@@ -20,9 +22,13 @@
 <script>
 document.getElementById("joinForm").addEventListener("submit", function(event) {
 event.preventDefault();
+let uname = document.getElementById("uname").value.trim();
 let code = document.getElementById("code").value.trim();
 if (code) {
-window.location.href = window.location.origin + window.location.pathname + "/" + encodeURIComponent(code);
+window.location.href =
+	window.location.origin + "/" +
+	encodeURIComponent(uname) + "/" +
+	encodeURIComponent(code);
 }
 });
 </script>

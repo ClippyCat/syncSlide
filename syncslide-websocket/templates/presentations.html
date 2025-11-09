@@ -12,7 +12,7 @@
 {% if press | length > 0 %}
 <ul>
 	{% for pres in press %}
-		<li><a href="/stage/{{ pres.id }}">{{ pres.name }}</a></li>
+		<li><a href="/{{ user.name }}/{{ pres.id }}">{{ pres.name }}</a></li>
 	{% endfor %}
 {% else %}
 No presentations.
