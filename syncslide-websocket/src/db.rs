@@ -1,8 +1,16 @@
 use argon2::password_hash::{PasswordHashString as PwdString, SaltString, rand_core::OsRng};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use axum_login::{AuthUser, AuthnBackend, UserId};
+use axum_login::{AuthUser, AuthnBackend, AuthzBackend, UserId};
 use serde::{Deserialize, Serialize};
 use sqlx::{self, SqlitePool};
+use std::collections::HashSet;
+
+#[derive(sqlx::Type, Copy, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[sqlx(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum Group {
+    Admin,
+}
 
 /// Add a new user, with a specific name, email and password.
 #[derive(Deserialize)]
@@ -100,6 +108,27 @@ pub struct User {
     pub password: String,
 }
 impl User {
+    pub async fn new(db: &SqlitePool, form: AddUserForm) -> Result<(), Error> {
+        let pwdstr = Argon2::default()
+            .hash_password(
+                form.password.as_bytes(),
+                &SaltString::generate(OsRng::default()),
+            )
+            .unwrap()
+            .serialize()
+            .as_str()
+            .to_string();
+        sqlx::query!(
+            "INSERT INTO users (name, email, password) VALUES (?, ?, ?);",
+            form.name,
+            form.email,
+            pwdstr
+        )
+        .execute(*&db)
+        .await
+        .map_err(Error::from)
+        .map(|_| ())
+    }
     pub async fn change_password(&self, new: String, db: &SqlitePool) -> Result<(), Error> {
         let pwdstr = Argon2::default()
             .hash_password(new.as_bytes(), &SaltString::generate(OsRng::default()))
@@ -150,6 +179,34 @@ pub enum Error {
     Sqlx(#[from] sqlx::Error),
     #[error(transparent)]
     Password(#[from] argon2::password_hash::Error),
+}
+
+#[derive(Eq, PartialEq, Hash)]
+struct GroupWrapper {
+    name: Group,
+}
+
+impl AuthzBackend for Backend {
+    type Permission = Group;
+    async fn get_user_permissions(&self, user: &User) -> Result<HashSet<Self::Permission>, Error> {
+        sqlx::query_as!(
+            GroupWrapper,
+            r#"SELECT groups.name as "name: Group"
+            FROM group_users
+            INNER JOIN groups
+            ON groups.id = group_users.user_id
+            WHERE group_users.user_id = ?"#,
+            user.id
+        )
+        .fetch_all(&self.db)
+        .await
+        .map_err(Error::from)
+        .map(|vec| HashSet::from_iter(vec.into_iter().map(|gw| gw.name)))
+    }
+    // TODO: group perms not set in DB
+    async fn get_group_permissions(&self, user: &User) -> Result<HashSet<Self::Permission>, Error> {
+        Self::get_user_permissions(self, user).await
+    }
 }
 
 impl AuthnBackend for Backend {
