@@ -1,3 +1,5 @@
+{% extends "base.html" %}
+{% block nav %}
 <nav>
 <ul>
 <li><a href="/">Home</a></li>
@@ -12,3 +14,13 @@
 <li><a href="/join">Join presentation</a></li>
 </ul>
 </nav>
+{% endblock nav %}
+
+{% block footer %}
+<footer>
+<ul>
+<li><a href="/demo">Demo</a></li>
+<li><a href="https://github.com/ClippyCat/syncslide/">SyncSlide on github</a></li>
+</ul>
+</footer>
+{% endblock footer %}

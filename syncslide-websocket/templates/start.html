@@ -1,25 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-{%set title="Start"%}
-{%include "partial/head.html"%}
-</head>
-<body>
-{%include "partial/header.html"%}
-{%include "partial/nav.html"%}
-<main>
-<h2>Start Presentation</h2>
-<form method="POST">
-<label for="name">Presentation Name</label>
-<input type="text" id="name" name="name" required>
-<button type="submit">Start</button>
-</form>
-</main>
-{%include "partial/footer.html"%}
-</body>
-
-<script>
+{% extends "nav.html" %}
+{% block title %}Create Presentation{% endblock title %}
+{% block js %}
+<script defer>
 document.getElementById("joinForm").addEventListener("submit", function(event) {
 event.preventDefault();
 let code = document.getElementById("code").value.trim();
@@ -28,4 +10,15 @@ window.location.href = window.location.origin + window.location.pathname + "/" +
 }
 });
 </script>
-</html>
+{% endblock js %}
+
+{% block content %}
+<main>
+<h2>Create Presentation</h2>
+<form method="POST">
+<label for="name">Presentation Name</label>
+<input type="text" id="name" name="name" required>
+<button type="submit">Create</button>
+</form>
+</main>
+{% endblock content %}

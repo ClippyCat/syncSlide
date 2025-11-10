@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "nav.html" %}
+{% block title %}Your Presentations{% endblock title %}
 
-<head>
-{%set title="Presentations"%}
-{%include "partial/head.html"%}
-</head>
-<body>
-{%include "partial/header.html"%}
-{%include "partial/nav.html"%}
+{% block content %}
 <main>
 <h2>Your Presentations</h2>
 {% if press | length > 0 %}
@@ -22,3 +16,4 @@
 </main>
 {%include "partial/footer.html"%}
 </body></html>
+{% endblock content %}

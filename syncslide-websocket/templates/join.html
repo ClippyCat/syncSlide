@@ -1,27 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "nav.html" %}
+{% block title %}Join Presentation{% endblock title %}
 
-<head>
-{%set title="Join"%}
-{%include "partial/head.html"%}
-</head>
-<body>
-{%include "partial/header.html"%}
-{%include "partial/nav.html"%}
-<main>
-<h2>Join Presentation</h2>
-<form id="joinForm">
-<label for="uname">Username</label>
-<input type="text" id="uname" name="username" required>
-<label for="code">Presentation Code</label>
-<input type="text" id="code" name="code" required>
-<button type="submit">Join</button>
-</form>
-</main>
-{%include "partial/footer.html"%}
-</body>
-
-<script>
+{% block js %}
+<script defer>
 document.getElementById("joinForm").addEventListener("submit", function(event) {
 event.preventDefault();
 let uname = document.getElementById("uname").value.trim();
@@ -34,4 +15,17 @@ window.location.href =
 }
 });
 </script>
-</html>
+{% endblock js %}
+
+{% block content %}
+<main>
+<h2>Join Presentation</h2>
+<form id="joinForm">
+<label for="uname">Username</label>
+<input type="text" id="uname" name="username" required>
+<label for="code">Presentation Code</label>
+<input type="text" id="code" name="code" required>
+<button type="submit">Join</button>
+</form>
+</main>
+{% endblock content %}
