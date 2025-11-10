@@ -6,6 +6,9 @@
 {% if user %}
 <li><a href="/create">Create presentation</a></li>
 <li><a href="/user/presentations">Presentations ({{ pres_num }})</a></li>
+{% if 'admin' in groups %}
+<li><a href="/user/new">Add User (admin)</a></li>
+{% endif %}
 <li><a href="/user/change_pwd">Change Password</a></li>
 <li><a href="/auth/logout">Logout</a></li>
 {% else %}
