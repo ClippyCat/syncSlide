@@ -18,7 +18,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
-use axum_login::AuthManagerLayerBuilder;
+use axum_login::{AuthManagerLayerBuilder, AuthzBackend};
 use futures_lite::future::or;
 use futures_util::{SinkExt, StreamExt};
 use sqlx::SqlitePool;
@@ -42,7 +42,8 @@ use std::{
 
 mod db;
 use db::{
-    AuthSession, Backend, ChangePasswordForm, LoginForm, Presentation as DbPresentation, User,
+    AddUserForm, AuthSession, Backend, ChangePasswordForm, Group, LoginForm,
+    Presentation as DbPresentation, User,
 };
 
 /// Wraps Tera renderer so that we can force a special render process.
@@ -67,7 +68,13 @@ impl Tera {
         if let Some(ref user) = auth_session.user {
             ctx.insert("user", &user);
             let pn = DbPresentation::num_for_user(&user, &db).await.unwrap();
+            let groups = auth_session
+                .backend
+                .get_user_permissions(user)
+                .await
+                .unwrap();
             ctx.insert("pres_num", &pn);
+            ctx.insert("groups", &groups);
         }
         let html = self.tera.render(name, &ctx).unwrap();
         Html(html).into_response()
@@ -349,6 +356,34 @@ async fn login(
     tera.render("login.html", Context::new(), auth_session, db)
         .await
 }
+async fn new_user_form(
+    State(db): State<SqlitePool>,
+    State(tera): State<Tera>,
+    auth_session: AuthSession,
+    Form(new_user): Form<AddUserForm>,
+) -> impl IntoResponse {
+    let Some(ref user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    if let Ok(is_admin) = auth_session.backend.has_perm(user, Group::Admin).await
+        && is_admin
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    User::new(&db, new_user).await.unwrap();
+    tera.render("/", Context::new(), auth_session, db).await
+}
+async fn new_user(
+    State(db): State<SqlitePool>,
+    State(tera): State<Tera>,
+    auth_session: AuthSession,
+) -> impl IntoResponse {
+    let Some(ref user) = auth_session.user else {
+        return Redirect::to("/auth/login").into_response();
+    };
+    tera.render("user/add_user.html", Context::new(), auth_session, db)
+        .await
+}
 async fn change_pwd(
     State(db): State<SqlitePool>,
     State(tera): State<Tera>,
@@ -440,7 +475,7 @@ async fn main() {
     let session_store = SqliteStore::new(db_pool.clone());
     session_store.migrate().await.unwrap();
     let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(true)
+        .with_secure(false)
         .with_expiry(Expiry::OnInactivity(Duration::days(1)));
     let tera = Tera::new();
     let backend = Backend::new(db_pool.clone());
@@ -459,6 +494,8 @@ async fn main() {
         .route("/user/presentations", get(presentations))
         .route("/user/change_pwd", get(change_pwd))
         .route("/user/change_pwd", post(change_pwd_form))
+        .route("/user/new", get(new_user))
+        .route("/user/new", post(new_user_form))
         .route("/join", get(join))
         .route("/create", get(start))
         .route("/create", post(start_pres))
