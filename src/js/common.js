@@ -1,9 +1,11 @@
 const pid=window.location.href.substring(window.location.href.lastIndexOf("/")+1)
 
-WEBSOCKET_ADDR = "wss://syncslide.clippycat.ca/ws/"+pid;
-if (window.location.protocol === "http:"){
-WEBSOCKET_ADDR = "ws://localhost:5002/ws/"+pid;
-}
+let port = window.location.port;
+let port_spec = port === "" ? "" : ":" + port;
+let host = window.location.hostname;
+let secure = window.location.protocol === "https:";
+let prefix = secure ? "wss://" : "ws://";
+WEBSOCKET_ADDR = prefix + host + port_spec + "/ws/" + pid;
 const socket = new WebSocket(WEBSOCKET_ADDR);
 const md = new remarkable.Remarkable({
 	html: true,
