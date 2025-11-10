@@ -250,7 +250,7 @@ async fn start(
     if auth_session.user.is_none() {
         return Redirect::to("/auth/login").into_response();
     }
-    tera.render("start.html", Context::new(), auth_session, db)
+    tera.render("create.html", Context::new(), auth_session, db)
         .await
 }
 
