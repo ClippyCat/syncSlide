@@ -28,6 +28,8 @@ nav a { margin: 1em; color: #ffffff; font-weight: bold; font-style: none; }
 
 nav a:hover, a.post-title-link:hover { text-decoration: underline; }
 
+nav li { display: inline;}
+
 li { margin: .5em; }
 
 table, table tr, table td, table th { border: 1px solid #aaa; border-collapse: collapse; padding: 5px; font-weight: normal; }
